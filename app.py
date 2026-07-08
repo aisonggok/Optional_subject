@@ -1,4 +1,4 @@
-code_content = """import streamlit as st
+import streamlit as st
 
 # --- [1. 송곡여고 개설 과목 데이터 세팅] ---
 SUBJECTS = {
@@ -61,12 +61,12 @@ if 'choices' not in st.session_state:
 st.set_page_config(page_title="송곡여고 과목 선택 시스템 v2", page_icon="🎓", layout="wide")
 
 # 대시보드 스타일 헤더
-st.markdown(\"""
+st.markdown("""
     <div style="background-color:#1E3A8A; padding:20px; border-radius:10px; margin-bottom:25px;">
         <h1 style="color:white; margin:0; font-size:28px; text-align:center;">🎓 송곡여자고등학교 고교학점제 모의 상담 시스템</h1>
         <p style="color:#D1D5DB; margin:5px 0 0 0; text-align:center; font-size:14px;">교양 및 예체능 분리 입력 기능이 반영된 가독성 개선 버전</p>
     </div>
-\""", unsafe_style_with_html=True)
+""", unsafe_style_with_html=True)
 
 # --- [4. 사이드바: 실시간 누적 규칙 체크 대시보드] ---
 st.sidebar.markdown("## 📊 실시간 누적 이수 진단")
@@ -268,8 +268,3 @@ elif st.session_state.step == "최종확인":
         st.session_state.step = "2-1"
         st.session_state.choices = {sem: {"국수영": [], "탐구": [], "기가_외국어": [], "교양": [], "예체능": []} for sem in ["2-1", "2-2", "3-1", "3-2"]}
         st.rerun()
-"""
-
-with open("songgok_course_selector_v2.py", "w", encoding="utf-8") as f:
-    f.write(code_content)
-print("File written successfully.")
