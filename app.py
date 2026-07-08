@@ -18,17 +18,17 @@ SUBJECTS = {
     },
     "3-1": {
         "국수영": ["국어(진로): 주제 탐구 독서", "수학(진로): 미적분Ⅱ", "영어(융합): 미디어 영어"],
-        "탐구": ["도시의 미래 탐구", "법과 사회", "역사로 탐구하는 현대 세계", "사회문제 탐구", "윤리문제 탐구", "전자기와 양자", "화학 반응의 세계", "세포와 물질대사", "지구시스템과학"],
+        "탐구": ["도시의 미래 탐구", "법과 사회", "역사로 탐구하는 현대 세계(ABC)", "사회문제 탐구(ABC)", "윤리문제 탐구(ABC)", "전자기와 양자", "화학 반응의 세계", "세포와 물질대사", "지구시스템과학"],
         "기가_외국어": ["데이터 과학", "중국어 회화", "한문 고전 읽기"],
         "교양": ["교육의 이해", "보건", "논술"],
-        "예체능": ["기초 체육 전공 실기", "실용음악실기Ⅰ", "미술실기Ⅰ"]
+        "예체능": ["기초 체육 전공 실기", "실용음악실기Ⅰ(ABC)", "미술실기Ⅰ(ABC)"]
     },
     "3-2": {
         "국수영": ["국어(융합): 매체 의사소통", "수학(진로): 경제 수학", "영어(진로): 심화 영어"],
-        "탐구": ["여행지리", "금융과 경제생활", "인문학과 윤리", "국제 관계의 이해", "기후변화와 지속가능한 세계", "기후변화와 환경생태", "융합과학 탐구"],
+        "탐구": ["여행지리(ABC)", "금융과 경제생활(ABC)", "인문학과 윤리", "국제 관계의 이해", "기후변화와 지속가능한 세계(ABC)", "기후변화와 환경생태(ABC)", "융합과학 탐구(ABC)"],
         "기가_외국어": ["소프트웨어와 생활", "심화 중국어", "생활과 한문"],
         "교양": ["생태와 환경", "논리와 사고", "인간과 심리"],
-        "예체능": ["심화 체육 전공 실기", "실용음악실기Ⅱ", "미술실기Ⅱ"]
+        "예체능": ["심화 체육 전공 실기", "실용음악실기Ⅱ(ABC)", "미술실기Ⅱ(ABC)"]
     }
 }
 
@@ -45,6 +45,9 @@ SCIENCE_SUBS = [
     "기후변화와 환경생태", "융합과학 탐구"
 ]
 
+# 공통 취소 옵션 텍스트
+NONE_OPT = "선택 안 함 (비워두기)"
+
 # --- [2. 세션 상태 초기화] ---
 if 'step' not in st.session_state:
     st.session_state.step = "2-1"
@@ -56,12 +59,12 @@ if 'choices' not in st.session_state:
         "3-2": {"국수영": [], "탐구": [], "기가_외국어": [], "교양": [], "예체능": []},
     }
 
-st.set_page_config(page_title="송곡여고 과목 선택 시스템 v9", page_icon="🎓", layout="wide")
+st.set_page_config(page_title="송곡여고 과목 선택 시스템 v11", page_icon="🎓", layout="wide")
 
 st.markdown("""
     <div style="background-color:#1E3A8A; padding:20px; border-radius:10px; margin-bottom:25px;">
         <h1 style="color:white; margin:0; font-size:28px; text-align:center;">🎓 송곡여자고등학교 고교학점제 모의 상담 시스템</h1>
-        <p style="color:#D1D5DB; margin:5px 0 0 0; text-align:center; font-size:14px;">(업데이트) 교양 및 지정교과 필수 이수 실시간 차단 로직 강화</p>
+        <p style="color:#D1D5DB; margin:5px 0 0 0; text-align:center; font-size:14px;">(업데이트) 이전 학기 선택 완벽 취소(초기화) 기능 적용 완료</p>
     </div>
 """, unsafe_allow_html=True)
 
@@ -97,7 +100,6 @@ st.sidebar.markdown("### 2. 필수 이수 영역")
 st.sidebar.markdown(f"{'✅' if social_cnt >= 1 else '❌'} 사회 탐구 필수 이수 (현재: {social_cnt}개)")
 st.sidebar.markdown(f"{'✅' if science_cnt >= 1 else '❌'} 과학 탐구 필수 이수 (현재: {science_cnt}개)")
 
-# [기능 반영] 3학년 1/2학기 교양 필수 이수 점검 항목 추가
 lib_31 = len(st.session_state.choices["3-1"]["교양"])
 lib_32 = len(st.session_state.choices["3-2"]["교양"])
 lib_ok = (lib_31 == 1) and (lib_32 == 1)
@@ -128,14 +130,10 @@ st.write("")
 def render_semester_ui(sem, prev_step, next_step):
     st.markdown(f"### 📅 {sem[0]}학년 {sem[2]}학기 과목 선택 룸")
     
+    # 이전 학기까지 누적된 국수영 과목 수 계산
     sem_order = ["2-1", "2-2", "3-1", "3-2"]
     current_idx = sem_order.index(sem)
     prev_kme_count = sum(len(st.session_state.choices[s]["국수영"]) for s in sem_order[:current_idx])
-    
-    def get_saved_idx(subject_list, saved_choice_list):
-        if saved_choice_list and saved_choice_list[0] in subject_list:
-            return subject_list.index(saved_choice_list[0])
-        return None
 
     with st.container():
         st.markdown("<div style='background-color:#F9FAFB; padding:20px; border-radius:8px; border:1px solid #E5E7EB;'>", unsafe_allow_html=True)
@@ -143,25 +141,33 @@ def render_semester_ui(sem, prev_step, next_step):
         col1, col2 = st.columns(2)
         with col1:
             st.markdown("#### 📕 기초 및 지정 교과 (단일 선택)")
-            kme_idx = get_saved_idx(SUBJECTS[sem]["국수영"], st.session_state.choices[sem]["국수영"])
+            
+            # [1] 국수영 교과 렌더링 (취소 기능 완벽 적용)
+            kme_opts = [NONE_OPT] + SUBJECTS[sem]["국수영"]
+            saved_kme = st.session_state.choices[sem]["국수영"]
+            current_kme = saved_kme[0] if saved_kme else NONE_OPT
             
             is_kme_locked = (prev_kme_count >= 3)
-            if is_kme_locked:
-                kme_val = st.selectbox("1. 국어/수학/영어 교과 (💡 3과목 한도 도달)", SUBJECTS[sem]["국수영"], index=None, placeholder="🚫 이미 이전 학기에서 3과목을 모두 선택했습니다.", disabled=True)
+            if is_kme_locked and current_kme == NONE_OPT:
+                kme_val = st.selectbox("1. 국어/수학/영어 교과 (💡 3과목 한도 도달)", [NONE_OPT], index=0, disabled=True)
             else:
-                kme_val = st.selectbox("1. 국어/수학/영어 교과 (💡 누적 최대 3과목)", SUBJECTS[sem]["국수영"], index=kme_idx, placeholder="클릭하여 1과목을 선택하거나 비워두세요")
-            kme = [kme_val] if kme_val else []
+                kme_val = st.selectbox("1. 국어/수학/영어 교과 (💡 누적 최대 3과목)", kme_opts, index=kme_opts.index(current_kme))
+            
+            kme = [kme_val] if kme_val != NONE_OPT else []
             
             if prev_kme_count + len(kme) > 3:
-                st.error("🚨 [규칙 위반] 국·수·영 교과는 3년간 최대 3과목까지만 선택 가능합니다! 해당 과목 선택을 해제(X 버튼) 해주세요.")
+                st.error("🚨 [규칙 위반] 국·수·영 교과는 3년간 최대 3과목까지만 선택 가능합니다! 해당 과목을 [선택 안 함 (비워두기)]로 변경해 주세요.")
             
-            tech_lang_idx = get_saved_idx(SUBJECTS[sem]["기가_외국어"], st.session_state.choices[sem]["기가_외국어"])
-            # [기능 반영] 2학년 필수 안내 문구 변경
-            tl_ph = "💡 2학년은 필수로 1과목을 선택하세요" if sem in ["2-1", "2-2"] else "클릭하여 1과목을 선택하거나 비워두세요"
-            tech_lang_val = st.selectbox("2. 기술·가정/정보, 제2외국어/한문", SUBJECTS[sem]["기가_외국어"], index=tech_lang_idx, placeholder=tl_ph)
-            tech_lang = [tech_lang_val] if tech_lang_val else []
+            # [2] 기가/외국어 교과 렌더링
+            tl_opts = [NONE_OPT] + SUBJECTS[sem]["기가_외국어"]
+            saved_tl = st.session_state.choices[sem]["기가_외국어"]
+            current_tl = saved_tl[0] if saved_tl else NONE_OPT
+            
+            tech_lang_val = st.selectbox("2. 기술·가정/정보, 제2외국어/한문", tl_opts, index=tl_opts.index(current_tl))
+            tech_lang = [tech_lang_val] if tech_lang_val != NONE_OPT else []
                 
         with col2:
+            # [3] 사회/과학 탐구 교과 (다중 선택 - x를 눌러 취소)
             st.markdown("#### 📘 탐구 교과 (사회 / 과학 자유 선택)")
             research = st.multiselect("3. 사회 · 과학 탐구 과목", SUBJECTS[sem]["탐구"], default=st.session_state.choices[sem]["탐구"])
             
@@ -172,19 +178,24 @@ def render_semester_ui(sem, prev_step, next_step):
             with col3:
                 if SUBJECTS[sem]["예체능"]:
                     st.markdown("#### 🎨 예체능 및 기타 교과")
-                    art_idx = get_saved_idx(SUBJECTS[sem]["예체능"], st.session_state.choices[sem]["예체능"])
-                    arts_sports_val = st.selectbox("4. 체육 / 예술 실기", SUBJECTS[sem]["예체능"], index=art_idx, placeholder="클릭하여 1과목을 선택하거나 비워두세요")
-                    arts_sports = [arts_sports_val] if arts_sports_val else []
+                    art_opts = [NONE_OPT] + SUBJECTS[sem]["예체능"]
+                    saved_art = st.session_state.choices[sem]["예체능"]
+                    current_art = saved_art[0] if saved_art else NONE_OPT
+                    
+                    arts_sports_val = st.selectbox("4. 체육 / 예술 실기", art_opts, index=art_opts.index(current_art))
+                    arts_sports = [arts_sports_val] if arts_sports_val != NONE_OPT else []
                 else:
                     arts_sports = []
                     
             with col4:
                 if SUBJECTS[sem]["교양"]:
                     st.markdown("#### 📙 교양 교과 (*3학년 필수 영역)")
-                    lib_idx = get_saved_idx(SUBJECTS[sem]["교양"], st.session_state.choices[sem]["교양"])
-                    # [기능 반영] 3학년 필수 교양 안내 문구 변경
-                    liberal_val = st.selectbox("5. 교양 과목 선택", SUBJECTS[sem]["교양"], index=lib_idx, placeholder="💡 3학년은 필수로 1과목을 선택하세요")
-                    liberal = [liberal_val] if liberal_val else []
+                    lib_opts = [NONE_OPT] + SUBJECTS[sem]["교양"]
+                    saved_lib = st.session_state.choices[sem]["교양"]
+                    current_lib = saved_lib[0] if saved_lib else NONE_OPT
+                    
+                    liberal_val = st.selectbox("5. 교양 과목 선택 (💡 3학년 필수 1과목)", lib_opts, index=lib_opts.index(current_lib))
+                    liberal = [liberal_val] if liberal_val != NONE_OPT else []
                 else:
                     liberal = []
         else:
@@ -195,7 +206,6 @@ def render_semester_ui(sem, prev_step, next_step):
 
     total_cnt = len(kme) + len(tech_lang) + len(research) + len(liberal) + len(arts_sports)
     
-    # [핵심 로직 수정] 단순히 5과목이 되었다고 성공을 띄우지 않고, 필수 과목 누락 여부를 함께 검사합니다.
     if total_cnt == 5:
         missing_mandatory = []
         if sem in ["2-1", "2-2"] and len(tech_lang) != 1:
@@ -231,8 +241,6 @@ def render_semester_ui(sem, prev_step, next_step):
                 errors.append("❌ 국어/수학/영어 교과 누적 이수 제한(최대 3과목)을 초과하여 다음 단계로 넘어갈 수 없습니다.")
             if sem in ["2-1", "2-2"] and len(tech_lang) != 1:
                 errors.append(f"❌ 2학년 과정({sem})에서는 기술·가정/정보 또는 제2외국어/한문 중 **학기별 필수 1과목**을 정확히 지정해야 합니다.")
-            
-            # [기능 반영] 3학년 교양 과목 강제 필수 검증
             if sem in ["3-1", "3-2"] and len(liberal) != 1:
                 errors.append(f"❌ 3학년 과정({sem})에서는 **교양 과목을 한 학기에 반드시 1과목** 필수로 이수해야 합니다.")
 
@@ -271,7 +279,6 @@ elif st.session_state.step == "최종확인":
     if total_credits < 12:
         final_errors.append(f"❌ 지정교과(기가/외국어/교양) 최소 이수 학점 미달 (최소 12학점 필수 / 현재 {total_credits}학점)")
         
-    # [기능 반영] 최종 검증에서도 교양 필수 이수를 엄격하게 점검
     if lib_31 != 1 or lib_32 != 1:
         final_errors.append("❌ 3학년 1학기와 2학기에 교양 과목을 각각 1과목씩 필수로 이수해야 합니다.")
 
