@@ -56,12 +56,12 @@ if 'choices' not in st.session_state:
         "3-2": {"국수영": [], "탐구": [], "기가_외국어": [], "교양": [], "예체능": []},
     }
 
-st.set_page_config(page_title="송곡여고 과목 선택 시스템 v7", page_icon="🎓", layout="wide")
+st.set_page_config(page_title="송곡여고 과목 선택 시스템 v8", page_icon="🎓", layout="wide")
 
 st.markdown("""
     <div style="background-color:#1E3A8A; padding:20px; border-radius:10px; margin-bottom:25px;">
         <h1 style="color:white; margin:0; font-size:28px; text-align:center;">🎓 송곡여자고등학교 고교학점제 모의 상담 시스템</h1>
-        <p style="color:#D1D5DB; margin:5px 0 0 0; text-align:center; font-size:14px;">(업데이트) 모바일 최적화 배치 및 불필요한 공백 영역 제거 완료</p>
+        <p style="color:#D1D5DB; margin:5px 0 0 0; text-align:center; font-size:14px;">(업데이트) 이전 학기 돌아가기 기능 및 예체능/교양 모바일 배치 순서 최적화</p>
     </div>
 """, unsafe_allow_html=True)
 
@@ -119,10 +119,9 @@ for i, s in enumerate(steps):
 st.write("")
 
 # --- [5. 학기별 선택 UI 구성 함수] ---
-def render_semester_ui(sem, next_step):
+def render_semester_ui(sem, prev_step, next_step):
     st.markdown(f"### 📅 {sem[0]}학년 {sem[2]}학기 과목 선택 룸")
     
-    # 이전 학기까지 누적된 국수영 과목 수 계산
     sem_order = ["2-1", "2-2", "3-1", "3-2"]
     current_idx = sem_order.index(sem)
     prev_kme_count = sum(len(st.session_state.choices[s]["국수영"]) for s in sem_order[:current_idx])
@@ -135,21 +134,16 @@ def render_semester_ui(sem, next_step):
     with st.container():
         st.markdown("<div style='background-color:#F9FAFB; padding:20px; border-radius:8px; border:1px solid #E5E7EB;'>", unsafe_allow_html=True)
         
-        # [수정포인트] 가로 2분할을 유지하되 위아래 줄(Row)로 교양/예체능을 분리
-        # Row 1: 국수영, 기가_외국어 vs 탐구
         col1, col2 = st.columns(2)
         with col1:
             st.markdown("#### 📕 기초 및 지정 교과 (단일 선택)")
-            
             kme_idx = get_saved_idx(SUBJECTS[sem]["국수영"], st.session_state.choices[sem]["국수영"])
             
-            # 누적 3과목 달성 시 잠금 처리 기능 복구 및 실시간 4과목째 차단 병행
             is_kme_locked = (prev_kme_count >= 3)
             if is_kme_locked:
                 kme_val = st.selectbox("1. 국어/수학/영어 교과 (💡 3과목 한도 도달)", SUBJECTS[sem]["국수영"], index=None, placeholder="🚫 이미 이전 학기에서 3과목을 모두 선택했습니다.", disabled=True)
             else:
                 kme_val = st.selectbox("1. 국어/수학/영어 교과 (💡 누적 최대 3과목)", SUBJECTS[sem]["국수영"], index=kme_idx, placeholder="클릭하여 1과목을 선택하거나 비워두세요")
-                
             kme = [kme_val] if kme_val else []
             
             if prev_kme_count + len(kme) > 3:
@@ -163,29 +157,29 @@ def render_semester_ui(sem, next_step):
             st.markdown("#### 📘 탐구 교과 (사회 / 과학 자유 선택)")
             research = st.multiselect("3. 사회 · 과학 탐구 과목", SUBJECTS[sem]["탐구"], default=st.session_state.choices[sem]["탐구"])
             
-        # [수정포인트] Row 2: 교양이나 예체능 과목이 '있는 학기(3학년)'에만 하단 구역을 렌더링
+        # [수정포인트] 모바일 뷰를 위해 '예체능'을 먼저 렌더링하고 '교양'을 그 다음(우측/하단)으로 배치
         if SUBJECTS[sem]["교양"] or SUBJECTS[sem]["예체능"]:
             st.markdown("<hr style='margin: 15px 0; border: 0; border-top: 1px dashed #D1D5DB;'>", unsafe_allow_html=True)
             col3, col4 = st.columns(2)
             
             with col3:
-                if SUBJECTS[sem]["교양"]:
-                    st.markdown("#### 📙 교양 교과 (*3학년 필수 영역)")
-                    lib_idx = get_saved_idx(SUBJECTS[sem]["교양"], st.session_state.choices[sem]["교양"])
-                    liberal_val = st.selectbox("4. 교양 과목 선택", SUBJECTS[sem]["교양"], index=lib_idx, placeholder="클릭하여 1과목을 선택하거나 비워두세요")
-                    liberal = [liberal_val] if liberal_val else []
-                else:
-                    liberal = []
-            with col4:
                 if SUBJECTS[sem]["예체능"]:
                     st.markdown("#### 🎨 예체능 및 기타 교과")
                     art_idx = get_saved_idx(SUBJECTS[sem]["예체능"], st.session_state.choices[sem]["예체능"])
-                    arts_sports_val = st.selectbox("5. 체육 / 예술 실기", SUBJECTS[sem]["예체능"], index=art_idx, placeholder="클릭하여 1과목을 선택하거나 비워두세요")
+                    arts_sports_val = st.selectbox("4. 체육 / 예술 실기", SUBJECTS[sem]["예체능"], index=art_idx, placeholder="클릭하여 1과목을 선택하거나 비워두세요")
                     arts_sports = [arts_sports_val] if arts_sports_val else []
                 else:
                     arts_sports = []
+                    
+            with col4:
+                if SUBJECTS[sem]["교양"]:
+                    st.markdown("#### 📙 교양 교과 (*3학년 필수 영역)")
+                    lib_idx = get_saved_idx(SUBJECTS[sem]["교양"], st.session_state.choices[sem]["교양"])
+                    liberal_val = st.selectbox("5. 교양 과목 선택", SUBJECTS[sem]["교양"], index=lib_idx, placeholder="클릭하여 1과목을 선택하거나 비워두세요")
+                    liberal = [liberal_val] if liberal_val else []
+                else:
+                    liberal = []
         else:
-            # 2학년처럼 둘 다 없는 경우에는 빈 리스트만 할당하고 화면에는 아무것도 띄우지 않음
             liberal = []
             arts_sports = []
                 
@@ -198,36 +192,52 @@ def render_semester_ui(sem, next_step):
     else:
         st.warning(f"⚠️ 현재 {total_cnt}과목 선택됨. 학기당 반드시 **정확히 5과목**을 채워야 합니다.")
 
-    if st.button(f"➔ {sem}학기 선택 완료 및 규칙 검증"):
-        errors = []
-        if total_cnt != 5:
-            errors.append(f"❌ 학기당 과목 수는 정확히 **5과목**이어야 합니다. (현재 {total_cnt}과목)")
-        if prev_kme_count + len(kme) > 3:
-            errors.append("❌ 국어/수학/영어 교과 누적 이수 제한(최대 3과목)을 초과하여 다음 단계로 넘어갈 수 없습니다.")
-        if sem in ["2-1", "2-2"] and len(tech_lang) < 1:
-            errors.append(f"❌ 2학년 과정({sem})에서는 기술·가정/정보 또는 제2외국어/한문 중 **학기별 필수 1과목**을 지정해야 합니다.")
-        if sem in ["3-1", "3-2"] and len(liberal) < 1:
-            errors.append(f"❌ 3학년 과정({sem})에서는 **교양 과목을 한 학기에 최소 1과목** 필수 이수해야 합니다.")
+    # [수정포인트] 이전/다음 학기 이동 버튼을 가로로 나란히 배치
+    st.write("")
+    btn_col1, btn_col2 = st.columns(2)
+    
+    with btn_col1:
+        if prev_step:
+            # 이전 단계 버튼 클릭 시 현재 내역을 자동 저장(보존)하고 넘어감
+            if st.button(f"⬅️ {prev_step}학기로 돌아가기", use_container_width=True):
+                st.session_state.choices[sem] = {
+                    "국수영": kme, "탐구": research, "기가_외국어": tech_lang, "교양": liberal, "예체능": arts_sports
+                }
+                st.session_state.step = prev_step
+                st.rerun()
 
-        if errors:
-            for err in errors:
-                st.error(err)
-        else:
-            st.session_state.choices[sem] = {
-                "국수영": kme, "탐구": research, "기가_외국어": tech_lang, "교양": liberal, "예체능": arts_sports
-            }
-            st.session_state.step = next_step
-            st.rerun()
+    with btn_col2:
+        if st.button(f"{sem}학기 선택 완료 및 다음 단계 ➔", use_container_width=True):
+            errors = []
+            if total_cnt != 5:
+                errors.append(f"❌ 학기당 과목 수는 정확히 **5과목**이어야 합니다. (현재 {total_cnt}과목)")
+            if prev_kme_count + len(kme) > 3:
+                errors.append("❌ 국어/수학/영어 교과 누적 이수 제한(최대 3과목)을 초과하여 다음 단계로 넘어갈 수 없습니다.")
+            if sem in ["2-1", "2-2"] and len(tech_lang) < 1:
+                errors.append(f"❌ 2학년 과정({sem})에서는 기술·가정/정보 또는 제2외국어/한문 중 **학기별 필수 1과목**을 지정해야 합니다.")
+            if sem in ["3-1", "3-2"] and len(liberal) < 1:
+                errors.append(f"❌ 3학년 과정({sem})에서는 **교양 과목을 한 학기에 최소 1과목** 필수 이수해야 합니다.")
+
+            if errors:
+                for err in errors:
+                    st.error(err)
+            else:
+                st.session_state.choices[sem] = {
+                    "국수영": kme, "탐구": research, "기가_외국어": tech_lang, "교양": liberal, "예체능": arts_sports
+                }
+                st.session_state.step = next_step
+                st.rerun()
 
 # --- [6. 라우팅 실행 및 최종확인 뷰] ---
 if st.session_state.step == "2-1":
-    render_semester_ui("2-1", "2-2")
+    render_semester_ui("2-1", None, "2-2")
 elif st.session_state.step == "2-2":
-    render_semester_ui("2-2", "3-1")
+    render_semester_ui("2-2", "2-1", "3-1")
 elif st.session_state.step == "3-1":
-    render_semester_ui("3-1", "3-2")
+    render_semester_ui("3-1", "2-2", "3-2")
 elif st.session_state.step == "3-2":
-    render_semester_ui("3-2", "최종확인")
+    render_semester_ui("3-2", "3-1", "최종확인")
+    
 elif st.session_state.step == "최종확인":
     st.markdown("### 🏁 전 학기 누적 조건 최종 스크린 검증")
     
@@ -275,7 +285,14 @@ elif st.session_state.step == "최종확인":
             })
         st.table(summary_list)
         
-    if st.button("🔄 전체 초기화 후 다시 설계하기"):
-        st.session_state.step = "2-1"
-        st.session_state.choices = {sem: {"국수영": [], "탐구": [], "기가_외국어": [], "교양": [], "예체능": []} for sem in ["2-1", "2-2", "3-1", "3-2"]}
-        st.rerun()
+    st.write("")
+    btn_final1, btn_final2 = st.columns(2)
+    with btn_final1:
+        if st.button("⬅️ 3-2학기로 돌아가기 (수정)", use_container_width=True):
+            st.session_state.step = "3-2"
+            st.rerun()
+    with btn_final2:
+        if st.button("🔄 전체 초기화 후 처음부터 다시 설계하기", use_container_width=True):
+            st.session_state.step = "2-1"
+            st.session_state.choices = {sem: {"국수영": [], "탐구": [], "기가_외국어": [], "교양": [], "예체능": []} for sem in ["2-1", "2-2", "3-1", "3-2"]}
+            st.rerun()
