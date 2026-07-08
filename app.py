@@ -18,17 +18,17 @@ SUBJECTS = {
     },
     "3-1": {
         "국수영": ["국어(진로): 주제 탐구 독서", "수학(진로): 미적분Ⅱ", "영어(융합): 미디어 영어"],
-        "탐구": ["도시의 미래 탐구", "법과 사회", "역사로 탐구하는 현대 세계", "사회문제 탐구", "윤리문제 탐구", "전자기와 양자", "화학 반응의 세계", "세포와 물질대사", "지구시스템과학"],
+        "탐구": ["도시의 미래 탐구", "법과 사회", "역사로 탐구하는 현대 세계(ABC)", "사회문제 탐구(ABC)", "윤리문제 탐구(ABC)", "전자기와 양자", "화학 반응의 세계", "세포와 물질대사", "지구시스템과학"],
         "기가_외국어": ["데이터 과학", "중국어 회화", "한문 고전 읽기"],
         "교양": ["교육의 이해", "보건", "논술"],
-        "예체능": ["기초 체육 전공 실기", "실용음악실기Ⅰ", "미술실기Ⅰ"]
+        "예체능": ["기초 체육 전공 실기", "실용음악실기Ⅰ(ABC)", "미술실기Ⅰ(ABC)"]
     },
     "3-2": {
         "국수영": ["국어(융합): 매체 의사소통", "수학(진로): 경제 수학", "영어(진로): 심화 영어"],
-        "탐구": ["여행지리", "금융과 경제생활", "인문학과 윤리", "국제 관계의 이해", "기후변화와 지속가능한 세계", "기후변화와 환경생태", "융합과학 탐구"],
+        "탐구": ["여행지리(ABC)", "금융과 경제생활(ABC)", "인문학과 윤리", "국제 관계의 이해", "기후변화와 지속가능한 세계(ABC)", "기후변화와 환경생태(ABC)", "융합과학 탐구(ABC)"],
         "기가_외국어": ["소프트웨어와 생활", "심화 중국어", "생활과 한문"],
         "교양": ["생태와 환경", "논리와 사고", "인간과 심리"],
-        "예체능": ["심화 체육 전공 실기", "실용음악실기Ⅱ", "미술실기Ⅱ"]
+        "예체능": ["심화 체육 전공 실기", "실용음악실기Ⅱ(ABC)", "미술실기Ⅱ(ABC)"]
     }
 }
 
@@ -56,12 +56,12 @@ if 'choices' not in st.session_state:
         "3-2": {"국수영": [], "탐구": [], "기가_외국어": [], "교양": [], "예체능": []},
     }
 
-st.set_page_config(page_title="송곡여고 과목 선택 시스템 v12", page_icon="🎓", layout="wide")
+st.set_page_config(page_title="송곡여고 과목 선택 시스템 v13", page_icon="🎓", layout="wide")
 
 st.markdown("""
     <div style="background-color:#1E3A8A; padding:20px; border-radius:10px; margin-bottom:25px;">
         <h1 style="color:white; margin:0; font-size:28px; text-align:center;">🎓 송곡여자고등학교 고교학점제 모의 상담 시스템</h1>
-        <p style="color:#D1D5DB; margin:5px 0 0 0; text-align:center; font-size:14px;">(업데이트) 모든 교과 직관적인 'X 버튼' 취소 기능 및 다중 선택 제한 UI 복구 완료</p>
+        <p style="color:#D1D5DB; margin:5px 0 0 0; text-align:center; font-size:14px;">(업데이트) 단일 선택 교과 자동 닫힘 기능(max_selections) 적용 완료</p>
     </div>
 """, unsafe_allow_html=True)
 
@@ -138,28 +138,25 @@ def render_semester_ui(sem, prev_step, next_step):
         with col1:
             st.markdown("#### 📕 기초 및 지정 교과 (단일 선택)")
             
-            # [1] KME (Multiselect 적용으로 X버튼 복구)
+            # [1] KME (max_selections=1 추가로 1개 선택 시 목록 자동 닫힘)
             saved_kme = st.session_state.choices[sem]["국수영"]
             is_kme_locked = (prev_kme_count >= 3)
             
             if is_kme_locked and not saved_kme:
                 kme = st.multiselect("1. 국어/수학/영어 교과 (💡 3과목 한도 도달)", SUBJECTS[sem]["국수영"], default=[], disabled=True)
             else:
-                kme = st.multiselect("1. 국어/수학/영어 교과 (💡 누적 최대 3과목)", SUBJECTS[sem]["국수영"], default=saved_kme)
+                kme = st.multiselect("1. 국어/수학/영어 교과 (💡 누적 최대 3과목)", SUBJECTS[sem]["국수영"], default=saved_kme, max_selections=1)
                 
-            if len(kme) > 1:
-                st.error("🚨 학기당 1과목만 선택 가능합니다. 'X'를 눌러 초과 과목을 취소하세요.")
             if prev_kme_count + len(kme) > 3:
                 st.error("🚨 [규칙 위반] 국·수·영 교과는 3년간 최대 3과목까지만 선택 가능합니다! 'X'를 눌러 취소해주세요.")
             
-            # [2] 기가/외국어 (Multiselect 적용으로 X버튼 복구)
+            # [2] 기가/외국어 (max_selections=1)
             saved_tl = st.session_state.choices[sem]["기가_외국어"]
-            tech_lang = st.multiselect("2. 기술·가정/정보, 제2외국어/한문 (💡 필수 1과목)", SUBJECTS[sem]["기가_외국어"], default=saved_tl)
-            if len(tech_lang) > 1:
-                st.error("🚨 지정 교과는 학기당 1과목만 선택 가능합니다. 'X'를 눌러 초과 과목을 취소하세요.")
+            tech_lang = st.multiselect("2. 기술·가정/정보, 제2외국어/한문 (💡 필수 1과목)", SUBJECTS[sem]["기가_외국어"], default=saved_tl, max_selections=1)
                 
         with col2:
             st.markdown("#### 📘 탐구 교과 (사회 / 과학 자유 선택)")
+            # 탐구는 다중 선택이 가능해야 하므로 max_selections를 제한하지 않음
             research = st.multiselect("3. 사회 · 과학 탐구 과목", SUBJECTS[sem]["탐구"], default=st.session_state.choices[sem]["탐구"])
             
         if SUBJECTS[sem]["교양"] or SUBJECTS[sem]["예체능"]:
@@ -170,9 +167,8 @@ def render_semester_ui(sem, prev_step, next_step):
                 if SUBJECTS[sem]["예체능"]:
                     st.markdown("#### 🎨 예체능 및 기타 교과")
                     saved_art = st.session_state.choices[sem]["예체능"]
-                    arts_sports = st.multiselect("4. 체육 / 예술 실기", SUBJECTS[sem]["예체능"], default=saved_art)
-                    if len(arts_sports) > 1:
-                        st.error("🚨 예체능 교과는 학기당 1과목만 선택 가능합니다. 'X'를 눌러 취소하세요.")
+                    # [3] 예체능 (max_selections=1)
+                    arts_sports = st.multiselect("4. 체육 / 예술 실기", SUBJECTS[sem]["예체능"], default=saved_art, max_selections=1)
                 else:
                     arts_sports = []
                     
@@ -180,9 +176,8 @@ def render_semester_ui(sem, prev_step, next_step):
                 if SUBJECTS[sem]["교양"]:
                     st.markdown("#### 📙 교양 교과 (*3학년 필수 영역)")
                     saved_lib = st.session_state.choices[sem]["교양"]
-                    liberal = st.multiselect("5. 교양 과목 선택 (💡 3학년 필수 1과목)", SUBJECTS[sem]["교양"], default=saved_lib)
-                    if len(liberal) > 1:
-                        st.error("🚨 교양 과목은 학기당 1과목만 선택 가능합니다. 'X'를 눌러 취소하세요.")
+                    # [4] 교양 (max_selections=1)
+                    liberal = st.multiselect("5. 교양 과목 선택 (💡 3학년 필수 1과목)", SUBJECTS[sem]["교양"], default=saved_lib, max_selections=1)
                 else:
                     liberal = []
         else:
@@ -200,18 +195,8 @@ def render_semester_ui(sem, prev_step, next_step):
         if sem in ["3-1", "3-2"] and len(liberal) != 1:
             missing_mandatory.append("교양 필수 1과목")
             
-        # 다중 선택 에러 검증 강화 (X 버튼 지원을 위함)
-        excess_errors = []
-        if len(kme) > 1: excess_errors.append("국수영")
-        if len(tech_lang) > 1: excess_errors.append("지정교과")
-        if len(arts_sports) > 1: excess_errors.append("예체능")
-        if len(liberal) > 1: excess_errors.append("교양")
-            
-        if missing_mandatory or excess_errors:
-            msg = []
-            if missing_mandatory: msg.append(f"필수 누락: {', '.join(missing_mandatory)}")
-            if excess_errors: msg.append(f"1과목 초과 선택: {', '.join(excess_errors)}")
-            st.error(f"⚠️ 총 5과목이지만 규칙 위반이 있습니다: **{' / '.join(msg)}**")
+        if missing_mandatory:
+            st.error(f"⚠️ 총 5과목을 선택했으나, 다음 필수 조건이 누락되었습니다: **{', '.join(missing_mandatory)}**")
         else:
             st.success(f"✅ 정확히 {total_cnt}과목 선택 완료 (필수 조건 모두 충족!)")
     else:
@@ -234,10 +219,6 @@ def render_semester_ui(sem, prev_step, next_step):
             errors = []
             if total_cnt != 5:
                 errors.append(f"❌ 학기당 과목 수는 정확히 **5과목**이어야 합니다. (현재 {total_cnt}과목)")
-            
-            # 다중 선택 UI 복구에 따른 다음 단계 차단 로직 추가
-            if len(kme) > 1 or len(tech_lang) > 1 or len(arts_sports) > 1 or len(liberal) > 1:
-                errors.append("❌ 단일 선택 교과군에서 2과목 이상 선택된 항목이 있습니다. 'X'를 눌러 1과목으로 맞춰주세요.")
                 
             if prev_kme_count + len(kme) > 3:
                 errors.append("❌ 국어/수학/영어 교과 누적 이수 제한(최대 3과목)을 초과하여 다음 단계로 넘어갈 수 없습니다.")
