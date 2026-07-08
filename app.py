@@ -58,13 +58,13 @@ if 'choices' not in st.session_state:
     }
 
 # --- [3. 페이지 설정 및 디자인] ---
-st.set_page_config(page_title="송곡여고 과목 선택 시스템 v2", page_icon="🎓", layout="wide")
+st.set_page_config(page_title="송곡여고 과목 선택 시스템 v3", page_icon="🎓", layout="wide")
 
 # 대시보드 스타일 헤더
 st.markdown("""
     <div style="background-color:#1E3A8A; padding:20px; border-radius:10px; margin-bottom:25px;">
         <h1 style="color:white; margin:0; font-size:28px; text-align:center;">🎓 송곡여자고등학교 고교학점제 모의 상담 시스템</h1>
-        <p style="color:#D1D5DB; margin:5px 0 0 0; text-align:center; font-size:14px;">교양 및 예체능 분리 입력 기능이 반영된 가독성 개선 버전</p>
+        <p style="color:#D1D5DB; margin:5px 0 0 0; text-align:center; font-size:14px;">(기능 업데이트) 지정 교과목 1과목 초과 선택 방지 시스템 적용 완료</p>
     </div>
 """, unsafe_allow_html=True)
 
@@ -133,32 +133,33 @@ def render_semester_ui(sem, next_step):
     st.markdown(f"### 📅 {sem[0]}학년 {sem[2]}학기 과목 선택 룸")
     st.markdown("학생의 진로와 이수 규칙을 고려하여 아래 과목들을 분류별로 선택해 주세요.")
     
-    # 가독성을 높이기 위한 테두리가 있는 컨테이너 상자 구성
     with st.container():
         st.markdown("<div style='background-color:#F9FAFB; padding:20px; border-radius:8px; border:1px solid #E5E7EB;'>", unsafe_allow_html=True)
         
         col1, col2 = st.columns(2)
         with col1:
             st.markdown("#### 📕 기초 교과 및 지정 교과")
-            kme = st.multiselect("1. 국어 / 수학 / 영어 교과 (💡 학기당 최대 1과목)", SUBJECTS[sem]["국수영"], default=st.session_state.choices[sem]["국수영"])
-            tech_lang = st.multiselect("2. 기술·가정/정보, 제2외국어/한문 교과 (💡 학기당 최대 1과목 / 3학점)", SUBJECTS[sem]["기가_외국어"], default=st.session_state.choices[sem]["기가_외국어"])
+            # [핵심 수정] max_selections=1 속성을 부여하여 한 과목 선택 시 잠금 처리
+            kme = st.multiselect("1. 국어 / 수학 / 영어 교과 (💡 최대 1과목)", SUBJECTS[sem]["국수영"], default=st.session_state.choices[sem]["국수영"], max_selections=1)
+            tech_lang = st.multiselect("2. 기술·가정/정보, 제2외국어/한문 (💡 최대 1과목)", SUBJECTS[sem]["기가_외국어"], default=st.session_state.choices[sem]["기가_외국어"], max_selections=1)
             
-            # [개선 핵심] 교양과 예체능을 명확히 분리하여 입력 받음
             st.markdown("#### 📙 교양 교과 (*3학년 필수 영역)")
             if SUBJECTS[sem]["교양"]:
-                liberal = st.multiselect("3. 교양 과목 선택 (💡 3학년 학기별 필수 1과목 / 2학점)", SUBJECTS[sem]["교양"], default=st.session_state.choices[sem]["교양"])
+                # [핵심 수정] 교양 과목 역시 1과목만 선택 가능하도록 제한
+                liberal = st.multiselect("3. 교양 과목 선택 (💡 최대 1과목)", SUBJECTS[sem]["교양"], default=st.session_state.choices[sem]["교양"], max_selections=1)
             else:
                 st.caption("ℹ️ 본 학기에는 개설된 교양 과목이 없습니다.")
                 liberal = []
                 
         with col2:
             st.markdown("#### 📘 탐구 교과 (사회 / 과학)")
-            research = st.multiselect("4. 사회 · 과학 탐구 과목 자유 선택", SUBJECTS[sem]["탐구"], default=st.session_state.choices[sem]["탐구"])
+            # 탐구 영역은 남은 과목 수를 채워야 하므로 선택 개수 제한(max_selections)을 두지 않습니다.
+            research = st.multiselect("4. 사회 · 과학 탐구 과목 (자유 선택)", SUBJECTS[sem]["탐구"], default=st.session_state.choices[sem]["탐구"])
             
-            # [개선 핵심] 예체능 영역 분리
             st.markdown("#### 🎨 예체능 및 기타 교과")
             if SUBJECTS[sem]["예체능"]:
-                arts_sports = st.multiselect("5. 체육 / 예술 전공 실기 및 실기 과목", SUBJECTS[sem]["예체능"], default=st.session_state.choices[sem]["예체능"])
+                # [핵심 수정] 예체능 영역 1과목 초과 방지
+                arts_sports = st.multiselect("5. 체육 / 예술 실기 (💡 최대 1과목)", SUBJECTS[sem]["예체능"], default=st.session_state.choices[sem]["예체능"], max_selections=1)
             else:
                 st.caption("ℹ️ 본 학기에는 개설된 예체능 과목이 없습니다.")
                 arts_sports = []
@@ -178,10 +179,6 @@ def render_semester_ui(sem, next_step):
         errors = []
         if total_cnt != 5:
             errors.append(f"❌ 학기당 과목 수는 정확히 **5과목**이어야 합니다. (현재 {total_cnt}과목)")
-        if len(kme) > 1:
-            errors.append("❌ 국어/수학/영어 교과는 학기당 **최대 1과목**만 선택할 수 있습니다.")
-        if len(tech_lang) > 1:
-            errors.append("❌ 기술·가정/정보, 제2외국어/한문 교과는 학기별로 **최대 1과목**만 선택 가능합니다.")
         
         # 2학년 학기별 지정 교과 필수 요건
         if sem in ["2-1", "2-2"] and len(tech_lang) < 1:
