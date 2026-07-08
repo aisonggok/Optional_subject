@@ -123,9 +123,9 @@ cols = st.columns(len(steps))
 for i, s in enumerate(steps):
     with cols[i]:
         if st.session_state.step == s:
-            st.markdown(f"<div style='text-align:center; padding:10px; background-color:#3B82F6; color:white; border-radius:5px; font-weight:bold;'>🔵 {s}학기 선택</div>", unsafe_style_with_html=True)
+            st.markdown(f"<div style='text-align:center; padding:10px; background-color:#3B82F6; color:white; border-radius:5px; font-weight:bold;'>🔵 {s}학기 선택</div>", unsafe_allow_html=True)
         else:
-            st.markdown(f"<div style='text-align:center; padding:10px; background-color:#F3F4F6; color:#6B7280; border-radius:5px;'>⚪ {s}</div>", unsafe_style_with_html=True)
+            st.markdown(f"<div style='text-align:center; padding:10px; background-color:#F3F4F6; color:#6B7280; border-radius:5px;'>⚪ {s}</div>", unsafe_allow_html=True)
 st.write("")
 
 # --- [6. 학기별 선택 UI 구성 함수] ---
@@ -135,7 +135,7 @@ def render_semester_ui(sem, next_step):
     
     # 가독성을 높이기 위한 테두리가 있는 컨테이너 상자 구성
     with st.container():
-        st.markdown("<div style='background-color:#F9FAFB; padding:20px; border-radius:8px; border:1px solid #E5E7EB;'>", unsafe_style_with_html=True)
+        st.markdown("<div style='background-color:#F9FAFB; padding:20px; border-radius:8px; border:1px solid #E5E7EB;'>", unsafe_allow_html=True)
         
         col1, col2 = st.columns(2)
         with col1:
@@ -163,7 +163,7 @@ def render_semester_ui(sem, next_step):
                 st.caption("ℹ️ 본 학기에는 개설된 예체능 과목이 없습니다.")
                 arts_sports = []
                 
-        st.markdown("</div>", unsafe_style_with_html=True)
+        st.markdown("</div>", unsafe_allow_html=True)
 
     # 실시간 선택 수치 브리핑
     total_cnt = len(kme) + len(tech_lang) + len(research) + len(liberal) + len(arts_sports)
