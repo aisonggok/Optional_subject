@@ -66,7 +66,7 @@ st.markdown("""
         <h1 style="color:white; margin:0; font-size:28px; text-align:center;">🎓 송곡여자고등학교 고교학점제 모의 상담 시스템</h1>
         <p style="color:#D1D5DB; margin:5px 0 0 0; text-align:center; font-size:14px;">교양 및 예체능 분리 입력 기능이 반영된 가독성 개선 버전</p>
     </div>
-""", unsafe_style_with_html=True)
+""", unsafe_allow_html=True)
 
 # --- [4. 사이드바: 실시간 누적 규칙 체크 대시보드] ---
 st.sidebar.markdown("## 📊 실시간 누적 이수 진단")
