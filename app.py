@@ -16,7 +16,7 @@ SUBJECTS = {
         "교양": [],
         "예체능": []
     },
-    "3-1": {
+   "3-1": {
         "국수영": ["국어(진로): 주제 탐구 독서", "수학(진로): 미적분Ⅱ", "영어(융합): 미디어 영어"],
         "탐구": ["도시의 미래 탐구", "법과 사회", "역사로 탐구하는 현대 세계(ABC)", "사회문제 탐구(ABC)", "윤리문제 탐구(ABC)", "전자기와 양자", "화학 반응의 세계", "세포와 물질대사", "지구시스템과학"],
         "기가_외국어": ["데이터 과학", "중국어 회화", "한문 고전 읽기"],
@@ -56,12 +56,31 @@ if 'choices' not in st.session_state:
         "3-2": {"국수영": [], "탐구": [], "기가_외국어": [], "교양": [], "예체능": []},
     }
 
-st.set_page_config(page_title="송곡여고 과목 선택 시스템 v13", page_icon="🎓", layout="wide")
+st.set_page_config(page_title="송곡여고 과목 선택 시스템 v14", page_icon="🎓", layout="wide")
 
+# [핵심 로직] CSS를 주입하여 스트림릿의 하드코딩된 영문 에러 메시지를 완벽하게 한글로 덮어씌웁니다.
 st.markdown("""
+    <style>
+    ul[role="listbox"] li[aria-disabled="true"] {
+        font-size: 0px !important;
+        color: transparent !important;
+    }
+    ul[role="listbox"] li[aria-disabled="true"] * {
+        display: none !important;
+    }
+    ul[role="listbox"] li[aria-disabled="true"]::after {
+        content: "🚨 1과목만 선택 가능합니다. 기존 과목의 'X'를 눌러 해제하세요.";
+        font-size: 14px !important;
+        color: #DC2626 !important;
+        display: block !important;
+        padding: 10px !important;
+        text-align: center !important;
+    }
+    </style>
+    
     <div style="background-color:#1E3A8A; padding:20px; border-radius:10px; margin-bottom:25px;">
         <h1 style="color:white; margin:0; font-size:28px; text-align:center;">🎓 송곡여자고등학교 고교학점제 모의 상담 시스템</h1>
-        <p style="color:#D1D5DB; margin:5px 0 0 0; text-align:center; font-size:14px;">(업데이트) 단일 선택 교과 자동 닫힘 기능(max_selections) 적용 완료</p>
+        <p style="color:#D1D5DB; margin:5px 0 0 0; text-align:center; font-size:14px;">(업데이트) 단일 선택 영문 에러 메시지 완벽 한글화 패치 적용 완료</p>
     </div>
 """, unsafe_allow_html=True)
 
@@ -138,7 +157,6 @@ def render_semester_ui(sem, prev_step, next_step):
         with col1:
             st.markdown("#### 📕 기초 및 지정 교과 (단일 선택)")
             
-            # [1] KME (max_selections=1 추가로 1개 선택 시 목록 자동 닫힘)
             saved_kme = st.session_state.choices[sem]["국수영"]
             is_kme_locked = (prev_kme_count >= 3)
             
@@ -150,13 +168,11 @@ def render_semester_ui(sem, prev_step, next_step):
             if prev_kme_count + len(kme) > 3:
                 st.error("🚨 [규칙 위반] 국·수·영 교과는 3년간 최대 3과목까지만 선택 가능합니다! 'X'를 눌러 취소해주세요.")
             
-            # [2] 기가/외국어 (max_selections=1)
             saved_tl = st.session_state.choices[sem]["기가_외국어"]
             tech_lang = st.multiselect("2. 기술·가정/정보, 제2외국어/한문 (💡 필수 1과목)", SUBJECTS[sem]["기가_외국어"], default=saved_tl, max_selections=1)
                 
         with col2:
             st.markdown("#### 📘 탐구 교과 (사회 / 과학 자유 선택)")
-            # 탐구는 다중 선택이 가능해야 하므로 max_selections를 제한하지 않음
             research = st.multiselect("3. 사회 · 과학 탐구 과목", SUBJECTS[sem]["탐구"], default=st.session_state.choices[sem]["탐구"])
             
         if SUBJECTS[sem]["교양"] or SUBJECTS[sem]["예체능"]:
@@ -165,9 +181,8 @@ def render_semester_ui(sem, prev_step, next_step):
             
             with col3:
                 if SUBJECTS[sem]["예체능"]:
-                    st.markdown("#### 🎨 예체능 및 기타 교과")
+                    st.markdown("#### 🎨 예체능 교과")
                     saved_art = st.session_state.choices[sem]["예체능"]
-                    # [3] 예체능 (max_selections=1)
                     arts_sports = st.multiselect("4. 체육 / 예술 실기", SUBJECTS[sem]["예체능"], default=saved_art, max_selections=1)
                 else:
                     arts_sports = []
@@ -176,7 +191,6 @@ def render_semester_ui(sem, prev_step, next_step):
                 if SUBJECTS[sem]["교양"]:
                     st.markdown("#### 📙 교양 교과 (*3학년 필수 영역)")
                     saved_lib = st.session_state.choices[sem]["교양"]
-                    # [4] 교양 (max_selections=1)
                     liberal = st.multiselect("5. 교양 과목 선택 (💡 3학년 필수 1과목)", SUBJECTS[sem]["교양"], default=saved_lib, max_selections=1)
                 else:
                     liberal = []
