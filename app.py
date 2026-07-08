@@ -60,8 +60,7 @@ st.set_page_config(page_title="송곡여고 과목 선택 시스템 v9", page_ic
 
 st.markdown("""
     <div style="background-color:#1E3A8A; padding:20px; border-radius:10px; margin-bottom:25px;">
-        <h1 style="color:white; margin:0; font-size:28px; text-align:center;">🎓 송곡여자고등학교 고교학점제 모의 상담 시스템</h1>
-        <p style="color:#D1D5DB; margin:5px 0 0 0; text-align:center; font-size:14px;">(업데이트) 교양 및 지정교과 필수 이수 실시간 차단 로직 강화</p>
+        <h1 style="color:white; margin:0; font-size:28px; text-align:center;">🎓 송곡여자고등학교 선택과목 검증 시스템</h1>
     </div>
 """, unsafe_allow_html=True)
 
