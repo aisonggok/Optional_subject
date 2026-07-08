@@ -56,12 +56,12 @@ if 'choices' not in st.session_state:
         "3-2": {"국수영": [], "탐구": [], "기가_외국어": [], "교양": [], "예체능": []},
     }
 
-st.set_page_config(page_title="송곡여고 과목 선택 시스템 v4", page_icon="🎓", layout="wide")
+st.set_page_config(page_title="송곡여고 과목 선택 시스템 v6", page_icon="🎓", layout="wide")
 
 st.markdown("""
     <div style="background-color:#1E3A8A; padding:20px; border-radius:10px; margin-bottom:25px;">
         <h1 style="color:white; margin:0; font-size:28px; text-align:center;">🎓 송곡여자고등학교 고교학점제 모의 상담 시스템</h1>
-        <p style="color:#D1D5DB; margin:5px 0 0 0; text-align:center; font-size:14px;">(업데이트) 단일 선택 과목 영문 에러 제거 및 한국어 친화적 UI 반영</p>
+        <p style="color:#D1D5DB; margin:5px 0 0 0; text-align:center; font-size:14px;">(업데이트) 국수영 4과목째 선택 시 실시간 경고 안내 및 다음 단계 차단 기능 적용</p>
     </div>
 """, unsafe_allow_html=True)
 
@@ -122,7 +122,11 @@ st.write("")
 def render_semester_ui(sem, next_step):
     st.markdown(f"### 📅 {sem[0]}학년 {sem[2]}학기 과목 선택 룸")
     
-    # 이전 선택값을 Selectbox 인덱스로 불러오는 헬퍼 함수
+    # 이전 학기까지 누적된 국수영 과목 수 계산
+    sem_order = ["2-1", "2-2", "3-1", "3-2"]
+    current_idx = sem_order.index(sem)
+    prev_kme_count = sum(len(st.session_state.choices[s]["국수영"]) for s in sem_order[:current_idx])
+    
     def get_saved_idx(subject_list, saved_choice_list):
         if saved_choice_list and saved_choice_list[0] in subject_list:
             return subject_list.index(saved_choice_list[0])
@@ -135,10 +139,15 @@ def render_semester_ui(sem, next_step):
         with col1:
             st.markdown("#### 📕 기초 및 지정 교과 (단일 선택)")
             
-            # [수정] 영문 에러 방지를 위해 Selectbox로 교체
             kme_idx = get_saved_idx(SUBJECTS[sem]["국수영"], st.session_state.choices[sem]["국수영"])
-            kme_val = st.selectbox("1. 국어/수학/영어 교과", SUBJECTS[sem]["국수영"], index=kme_idx, placeholder="클릭하여 1과목을 선택하거나 비워두세요")
+            
+            # [기능 반영] disabled(잠금)를 없애 학생들이 선택은 해볼 수 있도록 허용
+            kme_val = st.selectbox("1. 국어/수학/영어 교과 (💡 누적 최대 3과목)", SUBJECTS[sem]["국수영"], index=kme_idx, placeholder="클릭하여 1과목을 선택하거나 비워두세요")
             kme = [kme_val] if kme_val else []
+            
+            # [기능 반영] 4번째 과목을 선택하는 순간 즉각적으로 경고창 표시!
+            if prev_kme_count + len(kme) > 3:
+                st.error("🚨 [규칙 위반] 국·수·영 교과는 3년간 최대 3과목까지만 선택 가능합니다! 해당 과목 선택을 해제(X 버튼) 해주세요.")
             
             tech_lang_idx = get_saved_idx(SUBJECTS[sem]["기가_외국어"], st.session_state.choices[sem]["기가_외국어"])
             tech_lang_val = st.selectbox("2. 기술·가정/정보, 제2외국어/한문", SUBJECTS[sem]["기가_외국어"], index=tech_lang_idx, placeholder="클릭하여 1과목을 선택하거나 비워두세요")
@@ -155,7 +164,6 @@ def render_semester_ui(sem, next_step):
                 
         with col2:
             st.markdown("#### 📘 탐구 교과 (사회 / 과학 자유 선택)")
-            # 탐구는 다중 선택이므로 multiselect 유지
             research = st.multiselect("4. 사회 · 과학 탐구 과목", SUBJECTS[sem]["탐구"], default=st.session_state.choices[sem]["탐구"])
             
             st.markdown("#### 🎨 예체능 및 기타 교과")
@@ -180,6 +188,11 @@ def render_semester_ui(sem, next_step):
         errors = []
         if total_cnt != 5:
             errors.append(f"❌ 학기당 과목 수는 정확히 **5과목**이어야 합니다. (현재 {total_cnt}과목)")
+        
+        # [기능 반영] 버튼을 눌러 다음 단계로 넘어가려고 할 때 강력하게 4번째 과목을 차단
+        if prev_kme_count + len(kme) > 3:
+            errors.append("❌ 국어/수학/영어 교과 누적 이수 제한(최대 3과목)을 초과하여 다음 단계로 넘어갈 수 없습니다.")
+            
         if sem in ["2-1", "2-2"] and len(tech_lang) < 1:
             errors.append(f"❌ 2학년 과정({sem})에서는 기술·가정/정보 또는 제2외국어/한문 중 **학기별 필수 1과목**을 지정해야 합니다.")
         if sem in ["3-1", "3-2"] and len(liberal) < 1:
